@@ -113,13 +113,15 @@ func (p *PlanCommandRunner) runAutoplan(ctx *command.Context) {
 		}
 		return
 	}
-
-	// discard previous plans that might not be relevant anymore
-	ctx.Log.Debug("deleting previous plans and locks")
-	p.deletePlans(ctx)
-	_, err = p.lockingLocker.UnlockByPull(baseRepo.FullName, pull.Num)
-	if err != nil {
-		ctx.Log.Err("deleting locks: %s", err)
+	if result.PlanStatus != models.PlannedNoChangesPlanStatus {
+		ctx.Log.Debug("deleting previous plans and locks")
+		p.deletePlans(ctx)
+		_, err = p.lockingLocker.UnlockByPull(baseRepo.FullName, pull.Num)
+		if err != nil {
+			ctx.Log.Err("deleting locks: %s", err)
+		}
+	} else {
+		ctx.Log.Info("Skipping unlock for project %s — plan had no changes", projectName)
 	}
 
 	// Only run commands in parallel if enabled
