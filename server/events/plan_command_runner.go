@@ -1,8 +1,9 @@
 package events
 
-import "strconv"
-
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/runatlantis/atlantis/server/core/locking"
 	"github.com/runatlantis/atlantis/server/events/command"
 	"github.com/runatlantis/atlantis/server/events/models"
@@ -117,8 +118,10 @@ func (p *PlanCommandRunner) runAutoplan(ctx *command.Context) {
 	}
 
 	// discard previous plans that might not be relevant anymore
-	ctx.Log.Debug("deleting previous plans and locks")
+	ctx.Log.Debug("deleting previous plans and locks shas")
 	p.deletePlans(ctx)
+	ctx.Log.Debug("tada", baseRepo.FullName, pull.Num)
+
 	_, err = p.lockingLocker.UnlockByPull(baseRepo.FullName, pull.Num)
 	if err != nil {
 		ctx.Log.Err("deleting locks: %s", err)
@@ -239,7 +242,7 @@ func (p *PlanCommandRunner) run(ctx *command.Context, cmd *CommentCommand) {
 	// if the plan is generic, new plans will be generated based on changes
 	// discard previous plans that might not be relevant anymore
 	if !cmd.IsForSpecificProject() {
-		ctx.Log.Debug("deleting previous plans and locks")
+		ctx.Log.Debug("deleting previous plans and locks123")
 		p.deletePlans(ctx)
 	}
 
@@ -252,9 +255,11 @@ func (p *PlanCommandRunner) run(ctx *command.Context, cmd *CommentCommand) {
 		result = runProjectCmds(projectCmds, p.prjCmdRunner.Plan)
 	}
 	ctx.CommandHasErrors = result.HasErrors()
+	ctx.Log.Debug(fmt.Sprintf("%+v", result.ProjectResults), "lak")
 
 	for i, projResult := range result.ProjectResults {
 		projCtx := projectCmds[i]
+		ctx.Log.Debug("deleting previous plans and locks1234", projResult.PlanStatus())
 
 		if projResult.PlanStatus() == models.PlannedNoChangesPlanStatus || projResult.PlanStatus() == models.ErroredPlanStatus {
 			ctx.Log.Info("Keeping lock for project '%s' (no changes or error)", projCtx.ProjectName)
